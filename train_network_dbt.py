@@ -67,7 +67,7 @@ def twin_loss(f_patch1, f_patch2, f_neg=None, p=False, target=None, f_full1=None
 
     return loss
 
-    def train(model, device, args):
+def train(model, device, args):
     # Dataloader
     if args.category == 'chest':
         train_transforms = transforms.Compose([
