@@ -86,7 +86,7 @@ def train(model, device, args):
             return ChestDataset(
                root=args.dataset_path,
                 pre_transform=transforms_list,
-            phase=phase,
+                phase=phase,
                 patch=patch,
                 patch_size=args.patch_size,
                 step_size=args.step_size
