@@ -74,10 +74,10 @@ def train(model, device, args):
     # Método create_dataset
     def create_dataset(category, phase, patch=True):
         transforms_list = [
-            transforms.Resize((256*4, 256*4), Image.ANTIALIAS),
+            transforms.Resize((256*4, 256*4), Image.LANCZOS),
             transforms.ToTensor()
         ] if patch else [
-            transforms.Resize((256*4, 256*3), Image.ANTIALIAS),
+            transforms.Resize((256*4, 256*3), Image.LANCZOS),
         ]
 
         transforms_list = transforms.Compose(transforms_list)
