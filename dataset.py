@@ -126,13 +126,12 @@ class ChestDataset(Dataset):
         
         # Normal Images Info
         self.normal_path = os.path.normpath(os.path.join(root, self.phase, 'NORMAL'))
-        print(self.normal_path)
         self.normal_images = [f for f in os.listdir(self.normal_path)]
 
 
         # Tumor Images Info
         if phase != 'train':
-            self.tumor_path = os.path.join(root, self.phase, 'NORMAL')
+            self.tumor_path = os.path.join(root, self.phase, 'PNEUMONIA')
             self.tumor_images = [f for f in os.listdir(self.tumor_path)]
 
         print('%s dataset size %s' % (phase, len(self)))
@@ -142,7 +141,7 @@ class ChestDataset(Dataset):
             return len(self.normal_images)
         else:
             return len(self.tumor_images) + len(self.normal_images)
-
+    
     def __getitem__(self, idx):
         # Load Images. Tumor images are last
         if idx < len(self.normal_images):
@@ -158,7 +157,7 @@ class ChestDataset(Dataset):
         # Need patches during training, and full images during inference
         img = self.pre_transform(img)
         if not self.patch:
-            return img, idx >= len(self.normal_images)
+            return transforms.ToTensor()(img), idx >= len(self.normal_images)
         else: 
             x_length = (img.size[0] - self.patch_size) // self.step_size - 1
             y_length = (img.size[1] - self.patch_size) // self.step_size - 1
@@ -170,10 +169,10 @@ class ChestDataset(Dataset):
                 x_s = x_start * self.step_size
                 y_s = y_start * self.step_size
 
-                img_patch = img.crop((x_s,y_s,x_s+self.patch_size,y_s+self.patch_size))
+                img_patch = img.crop((x_s, y_s, x_s + self.patch_size, y_s + self.patch_size))
                 max_pixel = img_patch.getextrema()[0][1]
                 if max_pixel > 0:
-                    edg_patch = edg.crop((x_s,y_s,x_s+self.patch_size,y_s+self.patch_size))
+                    edg_patch = edg.crop((x_s, y_s, x_s + self.patch_size, y_s + self.patch_size))
                     break
 
             # Apply self-supervised learning augmentation
@@ -188,12 +187,12 @@ class ChestDataset(Dataset):
                         continue
                     x_s = x_start2 * self.step_size
                     y_s = y_start2 * self.step_size
-                    img_patch = img.crop((x_s,y_s,x_s+self.patch_size,y_s+self.patch_size))
+                    img_patch = img.crop((x_s, y_s, x_s + self.patch_size, y_s + self.patch_size))
                     max_pixel = img_patch.getextrema()[0][1]
                     # Record difference
                     if max_pixel > 0:
-                        dis_x = abs(x_start2-x_start) 
-                        dis_y = abs(y_start2-y_start) 
+                        dis_x = abs(x_start2 - x_start) 
+                        dis_y = abs(y_start2 - y_start) 
 
                         sim_x = 0 if dis_x == 3 else 0.5 / (dis_x + 1)
                         sim_y = 0 if dis_y == 3 else 0.5 / (dis_y + 1)
@@ -202,8 +201,15 @@ class ChestDataset(Dataset):
                         break
             # Neighbor image is applied same augmentation
             img_21 = self.to_im(img_patch)
+
+            # Convert images to tensors
+            img_11 = transforms.ToTensor()(img_11)
+            img_12 = transforms.ToTensor()(img_12)
+            img_21 = transforms.ToTensor()(img_21)
             
             # img_11: patch with 1st augmentation
             # img_12: patch with 2nd augmentation
             # img_21: neighbor of img_1* patch with 1st augmentation
             return img_11, img_12, img_21, sim
+        
+    
