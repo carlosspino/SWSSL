@@ -1,5 +1,5 @@
 Overview
-This script is designed for training an anomaly detection model using a Siamese network with triplet loss. The model is trained on chest or DBT (Digital Breast Tomosynthesis) images, and the training process involves learning features that can discriminate between positive (normal) and negative (anomalous) samples.
+This script is designed for training an anomaly detection model using a Siamese network with triplet loss. The model is trained on chest images, and the training process involves learning features that can discriminate between positive (normal) and negative (anomalous) samples.
 
 Requirements
 Before running the script, ensure you have the following dependencies installed:
