@@ -126,13 +126,13 @@ class ChestDataset(Dataset):
         
         # Normal Images Info
         self.normal_path = os.path.normpath(os.path.join(root, self.phase, 'NORMAL'))
+        print(self.normal_path)
         self.normal_images = [f for f in os.listdir(self.normal_path)]
-
 
 
         # Tumor Images Info
         if phase != 'train':
-            self.tumor_path = os.path.join(root, self.phase, '1.abnormal')
+            self.tumor_path = os.path.join(root, self.phase, 'NORMAL')
             self.tumor_images = [f for f in os.listdir(self.tumor_path)]
 
         print('%s dataset size %s' % (phase, len(self)))

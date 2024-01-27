@@ -120,7 +120,7 @@ def train(model, device, args):
     # Dataloader
     train_patch_d = create_dataset(args.category, 'train', patch=True)
     train_full_d = create_dataset(args.category, 'train', patch=False)
-    test_full_d = create_dataset(args.category, 'val', patch=False)
+    test_full_d = create_dataset(args.category, 'test', patch=False)
 
     train_patch_loader = create_dataloader(train_patch_d, args.batch_size, shuffle=True)
     train_loader = create_dataloader(train_full_d, args.batch_size, shuffle=False, drop_last=False)
