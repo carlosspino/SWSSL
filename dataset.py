@@ -173,7 +173,7 @@ class ChestDataset(Dataset):
             if x_length > 0:
                 x_start, y_start = torch.randint(0, x_length, (2,))
             else:
-                break  # Salir del bucle externo si x_length es 0
+                break  # End loop if x_length is 0
 
             x_s = x_start * self.step_size
             y_s = y_start * self.step_size
@@ -184,13 +184,13 @@ class ChestDataset(Dataset):
             if max_pixel > 0:
                 edg_patch = edg[:, :, x_s:x_s + self.patch_size, y_s:y_s + self.patch_size]
 
-            # Aplicar transformaciones o realizar operaciones adicionales según sea necesario
+            # Apply transformations or perform additional operations as needed
             img_11, _ = self.ss_transform(img_patch)
             img_12, _ = self.ss_transform(edg_patch)
 
-       # Nueva versión del bucle interno para encontrar el parche vecino
+       # New version of the inner loop to find the neighboring patch
         if x_length > 0 :
-            for _ in range(100):  # Intentamos encontrar un vecino hasta 100 veces (puedes ajustar este valor)
+            for _ in range(100):  # Attempt to find a neighbor up to 100 times (you can adjust this value)
                 x_start2, y_start2 = torch.randint(0, x_length, (2,))
                 if torch.abs(x_start2 - x_start) <= 3 and torch.abs(y_start2 - y_start) <= 3 and not (x_start == x_start2 and y_start == y_start2):
                     x_s2 = x_start2 * self.step_size
@@ -206,7 +206,7 @@ class ChestDataset(Dataset):
                         sim = sim_x + sim_y
                         break
 
-            # Continuación del código
+            # Rest of the code
             img_21, _ = self.ss_transform(img_patch_2)
             img_11 = transforms.ToTensor()(img_11)
             img_12 = transforms.ToTensor()(img_12)

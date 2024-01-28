@@ -44,6 +44,10 @@ Adjust these parameters according to your specific requirements.
 
 During training, the script prints informative updates, including the current triplet loss and other relevant information.
 
+Execution
+
+For the execution of the code you need to execute run_chest.ps1. It is done with the command '.\run_chest.ps1' in the directory where you have this class. 
+
 Notes
 The script utilizes GPU acceleration if a CUDA-compatible GPU is available. If not, we will use a CPU
 Make sure to modify the dataset path, category, and other parameters as needed for your specific dataset and experiment.

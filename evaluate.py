@@ -106,6 +106,7 @@ def evaluate_image(args, model, train_loader, test_loader, device, category='dbt
         img_auc = roc_auc_score(gt_img_np, pred_img_np)
         print("image-level auc-roc score : %f" % img_auc)
 
+        # We create the directory to store the results file
         directory_path = 'results'
 
         if not os.path.exists(directory_path):
