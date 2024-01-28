@@ -8,6 +8,7 @@ import cv2
 import json
 from sklearn.neighbors import KernelDensity
 import time
+import os
 
 def evaluate_image(args, model, train_loader, test_loader, device, category='dbt'):
     model.eval()
@@ -104,6 +105,21 @@ def evaluate_image(args, model, train_loader, test_loader, device, category='dbt
         gt_img_np = np.array(gt_list_img_lvl)
         img_auc = roc_auc_score(gt_img_np, pred_img_np)
         print("image-level auc-roc score : %f" % img_auc)
+
+        directory_path = 'results'
+
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+            print(f"Directory '{directory_path}' created.")
+            directory_path = 'results'
+            file_name = 'performance_chest_0.0.json'
+            file_path = os.path.join(directory_path, file_name)
+            with open(file_path, 'w') as f:
+                json.dump({}, f)
+                print(f"JSON file '{file_name}' created in '{directory_path}'.")
+        else:
+            print(f"Directory '{directory_path}' already exists.")
+
 
         file_name = 'results/performance_%s_%s.json' % (category, str(img_auc))
         with open(file_name, 'w+') as f:

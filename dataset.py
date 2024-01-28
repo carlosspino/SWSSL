@@ -135,6 +135,8 @@ class ChestDataset(Dataset):
             self.tumor_images = [f for f in os.listdir(self.tumor_path)]
 
         print('%s dataset size %s' % (phase, len(self)))
+
+        
     
     def __len__(self):
         if self.phase == 'train':
@@ -159,57 +161,61 @@ class ChestDataset(Dataset):
         if not self.patch:
             return transforms.ToTensor()(img), idx >= len(self.normal_images)
         else: 
-            x_length = (img.size[0] - self.patch_size) // self.step_size - 1
-            y_length = (img.size[1] - self.patch_size) // self.step_size - 1
+            if isinstance(img, Image.Image) and isinstance(img.size, tuple) and len(img.size) > 0:
+                x_length = (img.size[0] - self.patch_size) // self.step_size - 1
+                y_length = (img.size[0] - self.patch_size) // self.step_size - 1
+            else:
+                x_length = 0
+                y_length = 0
+
             
-            # Find a non-zero patch
-            while 1:
-                x_start, y_start = random.randint(0, x_length), random.randint(0, y_length)
-                
-                x_s = x_start * self.step_size
-                y_s = y_start * self.step_size
+        while True:
+            if x_length > 0:
+                x_start, y_start = torch.randint(0, x_length, (2,))
+            else:
+                break  # Salir del bucle externo si x_length es 0
 
-                img_patch = img.crop((x_s, y_s, x_s + self.patch_size, y_s + self.patch_size))
-                max_pixel = img_patch.getextrema()[0][1]
-                if max_pixel > 0:
-                    edg_patch = edg.crop((x_s, y_s, x_s + self.patch_size, y_s + self.patch_size))
-                    break
+            x_s = x_start * self.step_size
+            y_s = y_start * self.step_size
 
-            # Apply self-supervised learning augmentation
+            img_patch = img[:, :, x_s:x_s + self.patch_size, y_s:y_s + self.patch_size]
+            max_pixel = img_patch.view(-1).max().item()
+
+            if max_pixel > 0:
+                edg_patch = edg[:, :, x_s:x_s + self.patch_size, y_s:y_s + self.patch_size]
+
+            # Aplicar transformaciones o realizar operaciones adicionales según sea necesario
             img_11, _ = self.ss_transform(img_patch)
             img_12, _ = self.ss_transform(edg_patch)
 
-            # Find neighbor image of patch
-            while 1:
-                x_start2, y_start2 = random.randint(0, x_length), random.randint(0, y_length)
-                if abs(x_start2 - x_start) <= 3 and abs(y_start2 - y_start) <= 3:
-                    if x_start == x_start2 and y_start == y_start2:
-                        continue
-                    x_s = x_start2 * self.step_size
-                    y_s = y_start2 * self.step_size
-                    img_patch = img.crop((x_s, y_s, x_s + self.patch_size, y_s + self.patch_size))
-                    max_pixel = img_patch.getextrema()[0][1]
-                    # Record difference
-                    if max_pixel > 0:
-                        dis_x = abs(x_start2 - x_start) 
-                        dis_y = abs(y_start2 - y_start) 
+       # Nueva versión del bucle interno para encontrar el parche vecino
+        if x_length > 0 :
+            for _ in range(100):  # Intentamos encontrar un vecino hasta 100 veces (puedes ajustar este valor)
+                x_start2, y_start2 = torch.randint(0, x_length, (2,))
+                if torch.abs(x_start2 - x_start) <= 3 and torch.abs(y_start2 - y_start) <= 3 and not (x_start == x_start2 and y_start == y_start2):
+                    x_s2 = x_start2 * self.step_size
+                    y_s2 = y_start2 * self.step_size
+                    img_patch_2 = img[:, :, x_s2:x_s2 + self.patch_size, y_s2:y_s2 + self.patch_size]
+                    max_pixel_2 = img_patch_2.view(-1).max().item()
 
-                        sim_x = 0 if dis_x == 3 else 0.5 / (dis_x + 1)
-                        sim_y = 0 if dis_y == 3 else 0.5 / (dis_y + 1)
-                        sim = (sim_x + sim_y)
-
+                    if max_pixel_2 > 0:
+                        dis_x = torch.abs(x_start2 - x_start)
+                        dis_y = torch.abs(y_start2 - y_start)
+                        sim_x = torch.tensor(0.5 / (dis_x + 1) if dis_x != 3 else 0)
+                        sim_y = torch.tensor(0.5 / (dis_y + 1) if dis_y != 3 else 0)
+                        sim = sim_x + sim_y
                         break
-            # Neighbor image is applied same augmentation
-            img_21 = self.to_im(img_patch)
 
-            # Convert images to tensors
+            # Continuación del código
+            img_21, _ = self.ss_transform(img_patch_2)
             img_11 = transforms.ToTensor()(img_11)
             img_12 = transforms.ToTensor()(img_12)
             img_21 = transforms.ToTensor()(img_21)
-            
+
             # img_11: patch with 1st augmentation
             # img_12: patch with 2nd augmentation
             # img_21: neighbor of img_1* patch with 1st augmentation
             return img_11, img_12, img_21, sim
+
         
     

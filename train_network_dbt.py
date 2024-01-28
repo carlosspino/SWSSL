@@ -1,5 +1,6 @@
 import argparse
 import time
+import PIL
 import torch
 from tqdm import tqdm
 from torch import nn
@@ -26,26 +27,26 @@ from models import Patch_Model
 def twin_loss(f_patch1, f_patch2, f_neg=None, p=False, target=None):
     batch_size, dimension = f_patch1.shape
 
-    # Normalización de características
+    # Normalization of characteristics
     f_patch1_norm = F.normalize(f_patch1, dim=-1)
     f_patch2_norm = F.normalize(f_patch2, dim=-1)
 
-    # Cálculo de la pérdida positiva
+    # Positive loss calculation
     pos_score = torch.mm(f_patch1_norm, f_patch2_norm.t()) / batch_size
     diff = (pos_score - torch.eye(batch_size).cuda()).pow(2)
     loss = diff.diag().sum()
 
-    # Ponderación de la pérdida no diagonal
+    # Non-diagonal Loss Weighting
     non_diag_weight = (torch.ones([batch_size, batch_size]) - torch.eye(batch_size)) * 1e-6
     non_diag_weight = non_diag_weight.cuda()
     diff *= non_diag_weight
     loss += diff.sum()
 
     if f_neg is not None:
-        # Normalización de características negativas
+        # Negative Feature Normalization
         f_neg_norm = F.normalize(f_neg, dim=-1)
 
-        # Cálculo de la pérdida para pares positivos y negativos
+        # Loss calculation for positive and negative pairs
         pair_score = torch.mm(f_patch1_norm, f_patch2_norm.t())
         pair_sim = torch.sigmoid(pair_score.diag())
         pair_loss = torch.abs(pair_sim - torch.ones(batch_size).cuda()).sum()
@@ -54,10 +55,10 @@ def twin_loss(f_patch1, f_patch2, f_neg=None, p=False, target=None):
         neg_sim = torch.sigmoid(neg_score.diag())
         neg_loss = torch.abs(neg_sim - target).sum()
 
-        # Suma de las pérdidas
+        # Loss sum
         loss += neg_loss + pair_loss
 
-    # Impresión para depuración
+    # Some prints for debugging and have some tracking info
     if p:
         if f_neg is not None:
             print('pair loss ', pair_loss.item())
@@ -71,7 +72,7 @@ def twin_loss(f_patch1, f_patch2, f_neg=None, p=False, target=None):
     return loss
 
 def train(model, device, args):
-    # Método create_dataset
+    # Create_dataset method
     def create_dataset(category, phase, patch=True):
         transforms_list = [
             transforms.Resize((256*4, 256*4), Image.LANCZOS),
@@ -103,11 +104,11 @@ def train(model, device, args):
         else:
             raise ValueError(f"Invalid category: {category}")
 
-    # Método create_dataloader
+    # Create_dataloader method
     def create_dataloader(dataset, batch_size, shuffle=True, drop_last=False):
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last)
 
-    # Método evaluate_and_save_model
+    # Evaluate_and_save_model method
     def evaluate_and_save_model(epoch, model, args, best_score):
         twin_loss(f_patch, f_aug, f_neg=f_patch2, target=sim, p=1)
         score = evaluate_image(args, model, train_loader, test_loader, device, category=args.category)
@@ -134,8 +135,11 @@ def train(model, device, args):
 
     for epoch in range(args.epochs):
         with tqdm(total=len(train_patch_d), desc=f'Epoch {epoch + 1} / {args.epochs}', unit='img') as pbar:
-            for idx, data in enumerate(train_patch_loader):
+           train_patch_loader = [data for data in train_patch_loader if data is not None]
+           for idx, data in enumerate(train_patch_loader):
                 img, img_aug, img_2, sim = data
+
+                print(f"Type of img: {type(img)}, Is img an instance of PIL.Image.Image: {isinstance(img, PIL.Image.Image)}")
 
                 img = img.to(device)
                 img_2 = img_2.to(device)
@@ -156,6 +160,7 @@ def train(model, device, args):
                 # tqdm Update
                 pbar.set_postfix(**{'twin loss': loss.item()})
                 pbar.update(img.shape[0])
+
 
         # Evaluate
         if epoch > 0 and epoch % 10 == 0:

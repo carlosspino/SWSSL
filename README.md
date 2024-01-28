@@ -49,4 +49,7 @@ The script utilizes GPU acceleration if a CUDA-compatible GPU is available. If n
 Make sure to modify the dataset path, category, and other parameters as needed for your specific dataset and experiment.
 This is only a re-implementation, you are up to change it following the creators schema, with their public github repository.
 
+We have modified the evaluate.py class, adding a portion of code for creating a json with the results because of the troubles we had running the experiments. Also the run_chest class, executing it with bash did not work for us.
+We have changed the init and the get_item methods in dataset.py
+
 Original work by Haoyu Dong, Yifan Zhang, Hanxue Gu, Nicholas Konz, Yixin Zhang, and Maciej Mazurowski. Re-implemented by Carlos Pino Padilla and Carlos Ramírez Rodríguez de Sepúlveda.
